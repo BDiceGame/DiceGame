@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dice Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background-color: #f0f0f0;
+      overflow: hidden;
+      position: relative;
+    }
+    #gameContainer {
+      background-color: #fff;
+      border: 2px solid #000;
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      z-index: 1;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 1.2em;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    #message {
+      margin-top: 20px;
+      font-size: 1.5em;
+    }
+    .confetti {
+      position: absolute;
+      top: -10px;
+      width: 20px;
+      height: 20px;
+      background-size: contain;
+      animation: drop 3s linear infinite;
+      opacity: 0;
+    }
+    .confetti.flower {
+      background: url('https://img.icons8.com/color/48/000000/flower.png') no-repeat center center;
+    }
+    .confetti.coin {
+      background: url('https://img.icons8.com/color/48/000000/coins.png') no-repeat center center;
+    }
+    .confetti.star {
+      background: url('https://imgur.com/a/xJTa8QN.png') no-repeat center center;
+    }
+    @keyframes drop {
+      0% { 
+        top: -10px;
+        opacity: 1;
+      }
+      100% {
+        top: 100vh;
+        opacity: 0;
+      }
+    }
+    #coinBank {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      width: 100px;
+      height: 100px;
+      background: url('https://img.icons8.com/color/96/000000/money-box.png') no-repeat center center;
+      background-size: contain;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      50% { transform: translateX(5px); }
+      75% { transform: translateX(-5px); }
+    }
+    .shake {
+      animation: shake 0.5s;
+    }
+    .dice {
+      width: 100px;
+      height: 100px;
+      perspective: 1000px;
+      margin-top: 20px;
+    }
+    .dice-inner {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.3s;
+    }
+    .dice-face {
+      position: absolute;
+      width: 100px; 
+      height: 100px;
+      background: blue;
+      border: 1px solid #000;
+      box-sizing: border-box;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2em;
+      color: white;
+      text-align: center;
+    }
+    .front  { transform: rotateY(0deg) translateZ(50px); }
+    .back   { transform: rotateY(180deg) translateZ(50px); }
+    .right  { transform: rotateY(90deg) translateZ(50px); }
+    .left   { transform: rotateY(-90deg) translateZ(50px); }
+    .top    { transform: rotateX(90deg) translateZ(50px); }
+    .bottom { transform: rotateX(-90deg) translateZ(50px); }
+  </style>
+</head>
+<body>
+  <div id="gameContainer">
+    <h1>Dice Game</h1>
+    <select id="betAmount">
+      <option value="1">Bet 1 Coin</option>
+      <option value="2">Bet 2 Coins</option>
+      <option value="3">Bet 3 Coins</option>
+      <option value="4">Bet 4 Coins</option>
+      <option value="5">Bet 5 Coins</option>
+    </select>
+    <button onclick="rollDice()">Roll Dice</button>
+    <div id="message"></div>
+    <div id="diceContainer" class="dice">
+      <div class="dice-inner">
+        <div class="dice-face front">1</div>
+        <div class="dice-face back">3</div>
+        <div class="dice-face right">4</div>
+        <div class="dice-face left">2</div>
+        <div class="dice-face top">6</div>
+        <div class="dice-face bottom">5</div>
+      </div>
+    </div>
+  </div>
+  <div id="coinBank">Coins: <span id="coinCount">10</span></div>
+
+  <script>
+    let coins = 10;
+    let rolledValue = 1; // To store the actual rolled value
+
+    function rollDice() {
+      let betAmount = parseInt(document.getElementById('betAmount').value);
+      let message = document.getElementById('message');
+      let diceContainer = document.getElementById('diceContainer');
+      let diceInner = diceContainer.querySelector('.dice-inner');
+      
+      if (coins < betAmount) {
+        message.innerHTML = "Not enough coins to bet!";
+        message.style.color = "red";
+        return;
+      }
+
+      coins -= betAmount;
+      updateCoinBank();
+
+      // Determine dice result
+      rolledValue = Math.floor(Math.random() * 6) + 1;
+
+      // Rolling animation
+      let rollCount = 0;
+      const rollInterval = setInterval(() => {
+        diceInner.style.transform = `rotateX(${Math.random() * 720 - 360}deg) rotateY(${Math.random() * 720 - 360}deg)`;
+        rollCount++;
+        if (rollCount > 10) {
+          clearInterval(rollInterval);
+          setTimeout(() => {
+            // Set the final rotation to show the result face
+            const rotation = getDiceRotation(rolledValue);
+            diceInner.style.transform = rotation;
+            // Wait for the animation to complete before showing the result
+            setTimeout(() => {
+              displayResult();
+            }, 300); // Allow time for the final rotation to complete
+          }, 300); // Allow time for animation before showing result
+        }
+      }, 50); // Increased speed of dice rolling
+    }
+
+    function getDiceRotation(roll) {
+      switch (roll) {
+        case 1: return 'rotateX(0deg) rotateY(0deg)';
+        case 2: return 'rotateX(0deg) rotateY(90deg)';
+        case 3: return 'rotateX(0deg) rotateY(180deg)';
+        case 4: return 'rotateX(0deg) rotateY(270deg)';
+        case 5: return 'rotateX(90deg) rotateY(0deg)';
+        case 6: return 'rotateX(-90deg) rotateY(0deg)';
+      }
+    }
+
+    function displayResult() {
+      let message = document.getElementById('message');
+
+      if (rolledValue === 6) {
+        message.innerHTML = `You rolled a 6! You win!`;
+        message.style.color = "green";
+        coins += parseInt(document.getElementById('betAmount').value) * 6;
+        updateCoinBank();
+        createConfetti();
+        shakeCoinBank();
+      } else {
+        message.innerHTML = `You rolled a ${rolledValue}. Try again.`;
+        message.style.color = "red";
+      }
+    }
+
+    function updateCoinBank() {
+      document.getElementById('coinCount').innerText = coins;
+    }
+
+    function createConfetti() {
+      for (let i = 0; i < 50; i++) {
+        let confetti = document.createElement('div');
+        confetti.className = 'confetti ' + getRandomConfettiType();
+        confetti.style.left = Math.random() * 100 + 'vw';
+        confetti.style.animationDelay = Math.random() * 2 + 's';
+        document.body.appendChild(confetti);
+
+        setTimeout(() => {
+          confetti.remove();
+        }, 3000);
+      }
+    }
+
+    function getRandomConfettiType() {
+      const types = ['flower', 'coin', 'star'];
+      return types[Math.floor(Math.random() * types.length)];
+    }
+
+    function shakeCoinBank() {
+      const coinBank = document.getElementById('coinBank');
+      coinBank.classList.add('shake');
+      setTimeout(() => {
+        coinBank.classList.remove('shake');
+      }, 500);
+    }
+  </script>
+</body>
+</html>
